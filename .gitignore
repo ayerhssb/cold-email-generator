@@ -163,3 +163,36 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
+
+
+# ---- Project-specific ignores ----
+
+# OAuth credentials and tokens (Gmail API)
+credentials-mail-merge.json
+credentials-*.json
+token.json
+token-*.json
+# Google OAuth credentials
+resources/credentials.json
+resources/token.json
+
+# Environment files (contain sensitive data)
+.env
+.env.*
+!*.env.example   # keep only the template if needed
+
+# Local data files (private CSVs)
+resource/*.csv
+*.csv
+
+# Vector store / embeddings / local DB
+vectorstore/
+*.sqlite3
+*.chroma
+
+# VSCode settings
+.vscode/
+
+# Logs and temp
+*.log
+*.tmp

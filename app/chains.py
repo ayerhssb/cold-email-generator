@@ -55,6 +55,80 @@ class Chain:
         chain_email = prompt_email | self.llm
         res = chain_email.invoke({"job_description": str(job), "link_list": links})
         return res.content
+    
+    def write_mail_for_candidate(self, candidate_name, company, role, links):
+        """
+        Generate a personalised cold email for a candidate (using candidate/company/role)
+        `links` should be a list of portfolio link metadata (as returned by Portfolio.query_links).
+        """
+        prompt_email = PromptTemplate.from_template(
+            """
+            ### CONTEXT:
+            You are Mohan, a Business Development Executive at AtliQ (an AI & Software Consulting company).
+            The goal is to write a short, personalized outreach email to a hiring contact at {company} for the role: {role}.
+            Candidate name (recipient): {candidate_name}
+            Include 1–2 short sentences describing AtliQ's relevant capabilities, and add the most relevant portfolio links:
+            {link_list}
+
+            Write a polite, concise cold email that references the job role and company. Keep it ~5–8 sentences.
+            Do NOT provide any preamble, only the email content.
+            """
+        )
+        chain_email = prompt_email | self.llm
+        link_text = "\n".join([str(l) for l in (links or [])])
+        res = chain_email.invoke({
+            "candidate_name": candidate_name,
+            "company": company,
+            "role": role,
+            "link_list": link_text
+        })
+        return res.content
+
+
+    # app/chains.py (inside the same class, e.g., Chain or whatever class holds LLM helper methods)
+
+    def write_application_email_for_role(self, candidate_name, company, role, portfolio_links):
+        """
+        Generate a job-application email for `role` at `company` addressed to the hiring contact.
+        Keeps it short, clearly states interest, provides 1-2 lines of fit, references portfolio links,
+        and ends with a call-to-action (ask for next steps / interview).
+        """
+        # Template: tailor as you need (tone, length)
+        prompt_template = """
+        You are an assistant that composes short, professional job-application emails.
+
+        Candidate name: {candidate_name}
+        Target company: {company}
+        Role applied for: {role}
+
+        Portfolio / relevant links (one per line):
+        {links}
+
+        Requirements:
+        - The email should be written as the candidate (first-person).
+        - Clearly state interest in the {role} role and why the candidate is a good fit (1-2 short sentences).
+        - Mention 1-2 specific relevant skills or experiences matching the role (if provided).
+        - Include the portfolio links in one short line.
+        - Finish with a polite ask for next steps or interview availability.
+        - Keep the whole email between 4–7 sentences.
+        - No extra commentary, only provide the email body.
+
+        Write the email now.
+        """
+        prompt = PromptTemplate.from_template(prompt_template)
+
+        # format links into a simple bullet or inline string
+        links_text = "\n".join([f"- {l}" for l in (portfolio_links or [])]) or "No portfolio links available."
+
+        chain_email = prompt | self.llm
+        resp = chain_email.invoke({
+            "candidate_name": candidate_name,
+            "company": company,
+            "role": role,
+            "links": links_text
+        })
+        return resp.content
+
 
 if __name__ == "__main__":
     print(os.getenv("GROQ_API_KEY"))

@@ -1,118 +1,118 @@
 import streamlit as st
 from langchain_community.document_loaders import WebBaseLoader
+
+from chains import Chain
+from portfolio import Portfolio
+from utils import clean_text
+
+import os
+import csv
+import pandas as pd
+import streamlit as st
+from langchain_community.document_loaders import WebBaseLoader
+
 from chains import Chain
 from portfolio import Portfolio
 from utils import clean_text
 from mailmerge import send_emails
-import os, csv, pandas as pd
 
 
 def create_streamlit_app(llm, portfolio, clean_text):
     st.title("📧 Automate generating & sending mails")
+    url_input = st.text_input("Enter a URL:", value="https://jobs.cisco.com/jobs/ProjectDetail/Software-Engineer-C-Programming-and-Networking-5-to-9-Yrs-Chennai-Bangalore/1443134")
+    submit_button = st.button("Submit")
 
-    # ----------------------------
-    # 1️⃣ Smart CV Enhancer section
-    # ----------------------------
-    st.header("🧠 Smart CV Enhancer")
-
-    uploaded_resume = st.file_uploader("Upload your Resume (PDF/DOCX)", type=["pdf", "docx"])
-    uploaded_json = st.file_uploader("Upload your Projects JSON", type=["json"])
-    uploaded_excel = st.file_uploader("Upload Excel/CSV for job roles", type=["xlsx", "csv"])
-    target_skills = st.text_input("Enter target skills (comma-separated):")
-
-    if st.button("Process CV"):
-        if uploaded_resume and uploaded_json and uploaded_excel:
-            from cv_agent import (
-                read_resume, read_json_projects, read_excel_or_csv,
-                score_resume_against_skills, update_resume_sections
-            )
-
-            resume_text = read_resume(uploaded_resume)
-            projects, skills = read_json_projects(uploaded_json)
-            df = read_excel_or_csv(uploaded_excel)
-
-            target_skill_list = [s.strip() for s in target_skills.split(",") if s.strip()]
-            score = score_resume_against_skills(resume_text, target_skill_list)
-            st.write(f"Resume match score: **{score}%**")
-
-            updated_cv_text = update_resume_sections(resume_text, projects, skills, target_skill_list)
-
-            # store in session
-            st.session_state['final_cv'] = updated_cv_text
-            st.session_state['csv_df'] = df
-
-            if updated_cv_text.strip() != resume_text.strip():
-                st.success("✅ Resume updated successfully! Download the new version below:")
-            else:
-                st.info("No major changes detected. Using your original resume.")
-
-            st.download_button("Download Updated CV", updated_cv_text, file_name="updated_resume.txt")
-
-        else:
-            st.error("Please upload all three files.")
-
+    if submit_button:
+        try:
+            loader = WebBaseLoader([url_input])
+            data = clean_text(loader.load().pop().page_content)
+            portfolio.load_portfolio()
+            jobs = llm.extract_jobs(data)
+            for job in jobs:
+                skills = job.get('skills', [])
+                links = portfolio.query_links(skills)
+                email = llm.write_mail(job, links)
+                st.code(email, language='markdown')
+        except Exception as e:
+            st.error(f"An Error Occurred: {e}")
+    
+    
+    
     st.markdown("---")
+    
+    
+    
+    st.header("Mail-Merge: generate & send personalised mails from CSV")
+    role_input = st.text_input("Role you are applying for (used to craft emails):", value="Software Engineer")
+    generate_btn = st.button("Generate Mails")
+    send_btn = st.button("Send Mails")
 
-    # ----------------------------
-    # 2️⃣ Mail generation & sending
-    # ----------------------------
-    if 'csv_df' in st.session_state and 'final_cv' in st.session_state:
-        st.header("Mail-Merge: Generate & Send Personalised Mails")
+    # where the CSV will be read from (use backend csv in project dir)
+    base_dir = os.path.dirname(__file__)
+    csv_file = os.path.join(base_dir, "test-mailmerge.csv")  # change path if needed
 
-        role_input = st.text_input("Role you are applying for:", value="Software Engineer")
-        generate_btn = st.button("Generate Mails")
-        send_btn = st.button("Send Mails")
+    # ensure portfolio loaded
+    portfolio.load_portfolio()
 
-        portfolio.load_portfolio()
+    # Initialize session_state container
+    if "generated_mails" not in st.session_state:
+        st.session_state.generated_mails = []  # list of dicts: {name,email,company,subject,body}
 
-        if "generated_mails" not in st.session_state:
+    # Generate drafts
+    if generate_btn:
+        if not os.path.exists(csv_file):
+            st.error(f"CSV not found at {csv_file}. Place test-mailmerge.csv there (columns: name,email,company).")
+        else:
             st.session_state.generated_mails = []
-
-        if generate_btn:
-            df = st.session_state['csv_df']
-            st.session_state.generated_mails = []
-            for _, row in df.iterrows():
-                name = row.get("name", "there")
-                company = row.get("company", "")
-                email = row.get("email")
-                if not email:
-                    continue
-                links = portfolio.query_links([role_input])
-                subject = f"Regarding {role_input} opportunities at {company}"
-                try:
-                    body = llm.write_application_email_for_role(name, company, role_input, links)
-                except Exception as e:
-                    body = f"Could not generate email due to: {e}"
-                st.session_state.generated_mails.append({
-                    "name": name, "email": email, "company": company,
-                    "subject": subject, "body": body
-                })
+            with open(csv_file, newline='', encoding='utf-8') as csvfile:
+                reader = csv.DictReader(csvfile)
+                for row in reader:
+                    name = row.get("name", "there")
+                    company = row.get("company", "")
+                    email = row.get("email")
+                    if not email:
+                        continue
+                    # query portfolio links using role (simple: treat role as a skill query)
+                    links = portfolio.query_links([role_input])
+                    # create subject & body using chains helper
+                    subject = f"Regarding {role_input} opportunities at {company}"
+                    try:
+                        body = llm.write_application_email_for_role(name, company, role_input, links)
+                    except Exception as e:
+                        body = f"Could not generate email due to: {e}"
+                    st.session_state.generated_mails.append({
+                        "name": name, "email": email, "company": company,
+                        "subject": subject, "body": body
+                    })
             st.success(f"Generated {len(st.session_state.generated_mails)} drafts.")
 
-        # Show drafts
-        if st.session_state.generated_mails:
-            st.subheader("Generated Drafts")
-            for m in st.session_state.generated_mails:
-                with st.expander(f"{m['name']} — {m['company']} ({m['email']})"):
-                    st.write("Subject:", m['subject'])
-                    st.code(m['body'], language='markdown')
+    # Show generated drafts
+    if st.session_state.generated_mails:
+        st.subheader("Generated drafts")
+        for i, m in enumerate(st.session_state.generated_mails):
+            with st.expander(f"{m['name']} — {m['company']} ({m['email']})", expanded=False):
+                st.write("Subject:", m['subject'])
+                st.code(m['body'], language='markdown')
 
-        # Send mails (with CV attachment)
-        if send_btn:
+    # Send mails
+    if send_btn:
+        if not st.session_state.generated_mails:
+            st.error("No generated mails to send. Click 'Generate Mails' first.")
+        else:
             try:
+                # Prepare messages in the shape mailmerge.send_emails expects
                 messages = []
                 for m in st.session_state.generated_mails:
                     messages.append({
                         "to": m['email'],
                         "subject": m['subject'],
-                        "body": m['body'] + "\n\n[CV attached]",
+                        "body": m['body']
                     })
                 results = send_emails(messages)
-                st.success(f"Sent {len(results)} emails successfully (CV attached).")
+                st.success(f"Sent {len(results)} emails.")
+                st.write(results)
             except Exception as e:
                 st.error(f"Sending failed: {e}")
-    else:
-        st.info("⬆️ Please upload your files and process CV before generating mails.")
 
 
 if __name__ == "__main__":
@@ -120,3 +120,4 @@ if __name__ == "__main__":
     portfolio = Portfolio()
     st.set_page_config(layout="wide", page_title="Cold Email Generator", page_icon="📧")
     create_streamlit_app(chain, portfolio, clean_text)
+

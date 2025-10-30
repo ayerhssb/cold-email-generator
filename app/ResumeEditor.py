@@ -1,5 +1,5 @@
 from typing import List
-import subprocess
+import subprocess, os
 from utils import format_latex_string
 
 class Resume:
@@ -246,8 +246,18 @@ class Resume:
         tex = self.generate_full_resume_latex()
         with open("resume.tex", "w") as f:
             f.write(tex)
-        subprocess.run(["pdflatex", "resume.tex"])
-        print(f"PDF resume generated as {output_path}")
+
+        if not os.path.exists("pdfs"):
+            os.makedirs("pdfs")
+        subprocess.run(["pdflatex", f"--jobname={output_path.split('.')[0]}", "-output-directory=pdfs", "resume.tex"], stderr=subprocess.DEVNULL)
+        os.remove("resume.tex")
+        import glob
+        for pattern in ["pdfs/*.aux", "pdfs/*.log", "pdfs/*.out"]:
+            for filepath in glob.glob(pattern):
+                try:
+                    os.remove(filepath)
+                except OSError:
+                    pass
 
 
 if __name__ == "__main__":

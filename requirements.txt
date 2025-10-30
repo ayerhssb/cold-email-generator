@@ -1,7 +1,6 @@
 # Core LangChain & LLM
 langchain==0.2.14
 langchain-community==0.2.12
-langchain-groq==0.1.9
 
 # Data parsing / processing
 pandas
@@ -10,14 +9,11 @@ PyPDF2==3.0.1
 python-docx==1.1.2
 
 # App frontend
-streamlit==1.35.0
-
-# Web scraping / text cleaning
+langchain-groq===0.1.9
 unstructured>=0.14.6
 selenium==4.21.0
-
-# Vector DB (if used by portfolio)
 chromadb==0.5.0
+streamlit==1.35.0
 
 # Environment + API utilities
 python-dotenv==1.0.0

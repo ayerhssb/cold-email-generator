@@ -1,0 +1,23 @@
+[project]
+name = "cold-email-generator"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "chromadb>=1.1.1",
+    "google-api-python-client>=2.184.0",
+    "google-auth>=2.41.1",
+    "google-auth-oauthlib>=1.2.2",
+    "langchain>=0.3.27",
+    "langchain-community>=0.3.31",
+    "langchain-groq>=0.3.8",
+    "pandas>=2.3.3",
+    "pypdf2>=3.0.1",
+    "python-docx>=1.2.0",
+    "python-dotenv>=1.1.1",
+    "reportlab>=4.4.4",
+    "selenium>=4.36.0",
+    "streamlit>=1.50.0",
+    "unstructured>=0.18.15",
+]

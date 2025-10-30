@@ -23,7 +23,7 @@ This app uses **Llama 3.1**, **LangChain**, and **ChromaDB** to generate persona
 
 ---
 
-## ⚙️ How to Run
+## How to Run
 
 1. **Clone the repository**
    ```bash
@@ -53,11 +53,11 @@ This app uses **Llama 3.1**, **LangChain**, and **ChromaDB** to generate persona
 
 5. **Open in browser**
    Streamlit will automatically open a local URL like  
-   👉 `http://localhost:8501`
+   `http://localhost:8501`
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 ```
 cold-email-generator/
 │

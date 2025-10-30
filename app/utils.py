@@ -14,3 +14,6 @@ def clean_text(text):
     # Remove extra whitespace
     text = ' '.join(text.split())
     return text
+
+def format_latex_string(string: str) -> str:
+    return string.replace("\\", "\\\\").replace("_", "\\_").replace("&", "\\&").replace("%", "\\%")

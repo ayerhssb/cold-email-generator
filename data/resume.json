@@ -1,0 +1,159 @@
+{
+  "name": "Jane Doe",
+  "title": "Software Engineer",
+  "contact": {
+    "email": "jane.doe@example.com",
+    "phone": "123-456-7890",
+    "linkedin": "janedoe",
+    "github": "janedoe"
+  },
+  "summary": "Experienced software engineer with a passion for developing innovative programs that expedite the efficiency and effectiveness of organizational success.",
+  "education": [
+    {
+      "institution": "University Name",
+      "degree": "Bachelor of Science in Computer Science",
+      "grade": "4.00 / 4.00",
+      "duration": "May 2026"
+    }
+  ],
+  "experience": [
+    {
+      "organization": "Apex Tech",
+      "role": "Senior Software Engineer",
+      "location": "San Francisco, CA",
+      "duration": "Oct 2023 - Present",
+      "description": [
+        "Designed and implemented a microservices architecture for the payments platform, improving reliability by 30%.",
+        "Built high-throughput APIs in Python and Go; introduced circuit-breaker and retry strategies for resiliency.",
+        "Owned CI/CD pipelines and reduced deployment time from 45 minutes to under 10 minutes."
+      ]
+    },
+    {
+      "organization": "Insight Analytics",
+      "role": "Data Scientist",
+      "location": "Remote",
+      "duration": "May 2021 - Sep 2023",
+      "description": [
+        "Developed customer segmentation and churn prediction models (XGBoost, LightGBM) increasing retention by 12%.",
+        "Led A/B testing experiments end-to-end and created dashboards to communicate results with stakeholders.",
+        "Productionized ML models with Docker and scheduled retraining using Airflow."
+      ]
+    },
+    {
+      "organization": "CloudWave",
+      "role": "Software Engineer",
+      "location": "New York, NY",
+      "duration": "Jan 2019 - Apr 2021",
+      "description": [
+        "Implemented event-driven services using Kafka that processed >100k events/minute.",
+        "Improved system observability by adding Prometheus metrics and Grafana dashboards.",
+        "Mentored junior engineers and conducted code reviews to improve code quality."
+      ]
+    },
+    {
+      "organization": "NeuroScale",
+      "role": "Machine Learning Engineer",
+      "location": "Boston, MA",
+      "duration": "Jun 2017 - Dec 2018",
+      "description": [
+        "Built and optimized deep learning pipelines (PyTorch) for image classification with 92% accuracy.",
+        "Worked on data labeling workflows and feature engineering to improve model generalization.",
+        "Collaborated with product teams to design experiments and interpret model behavior."
+      ]
+    },
+    {
+      "organization": "OpenData Labs",
+      "role": "Data Science Intern",
+      "location": "Seattle, WA",
+      "duration": "Jun 2016 - Aug 2016",
+      "description": [
+        "Built ETL pipelines in Python to clean and aggregate web-scraped data for analysis.",
+        "Implemented prototype recommendation algorithms and presented findings to the team.",
+        "Automated data validation checks that reduced downstream errors by 18%."
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "name": "Realtime Recommendation Engine",
+      "description": [
+        "Designed a low-latency recommendation service that serves personalized content in under 50ms.",
+        "Implemented mix of collaborative filtering and content-based features; A/B tests showed +8% CTR."
+      ],
+      "technologies": [
+        "Python",
+        "Redis",
+        "Kafka",
+        "LightGBM"
+      ]
+    },
+    {
+      "name": "Scalable Event-driven Microservices",
+      "description": [
+        "Built a set of resilient microservices for order processing using Kafka and Docker Swarm.",
+        "Added backpressure handling and idempotency to ensure reliable processing at high load."
+      ],
+      "technologies": [
+        "Go",
+        "Kafka",
+        "Docker",
+        "Prometheus"
+      ]
+    },
+    {
+      "name": "Customer Churn Prediction",
+      "description": [
+        "Created a churn prediction pipeline using feature stores and LightGBM; delivered 85% AUC.",
+        "Integrated model outputs with CRM to drive targeted retention campaigns."
+      ],
+      "technologies": [
+        "Python",
+        "Pandas",
+        "LightGBM",
+        "Airflow"
+      ]
+    },
+    {
+      "name": "NLP Resume Parser",
+      "description": [
+        "Built an NLP pipeline to extract entities (skills, experience, education) from resumes with spaCy and custom rules.",
+        "Deployed as a REST API and integrated with internal applicant tracking system."
+      ],
+      "technologies": [
+        "Python",
+        "spaCy",
+        "FastAPI",
+        "PostgreSQL"
+      ]
+    },
+    {
+      "name": "Experimentation & A/B Platform",
+      "description": [
+        "Implemented an experimentation platform enabling consistent A/B tests across web and mobile products.",
+        "Provided statistical analysis tooling and automated reporting to product teams."
+      ],
+      "technologies": [
+        "R",
+        "Python",
+        "Docker",
+        "Grafana"
+      ]
+    }
+  ],
+  "skills": {
+    "Programming Languages": [
+      "Python",
+      "JavaScript",
+      "C++"
+    ],
+    "Frameworks": [
+      "React",
+      "Django",
+      "Flask"
+    ],
+    "Databases": [
+      "MySQL",
+      "MongoDB"
+    ]
+  }
+}

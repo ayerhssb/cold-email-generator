@@ -1,5 +1,6 @@
 from typing import List
 import subprocess
+from utils import format_latex_string
 
 class Resume:
     def __init__(self, education: List[dict], experience: List[dict], projects: List[dict], skills: dict, name: str, phone: str, email: str, linkedin: str, github: str):
@@ -16,21 +17,21 @@ class Resume:
     def get_education_entry(self, edu: dict) -> str:
         tex = rf"""
         \resumeSubheading
-        {{{edu["institution"]}}}{{{edu["duration"]}}}
-        {{{edu["degree"]}}}{{GPA: {edu["grade"]}}}
+        {{{format_latex_string(edu["institution"])}}}{{{format_latex_string(edu["duration"])}}}
+        {{{format_latex_string(edu["degree"])}}}{{GPA: {format_latex_string(edu["grade"])}}}
         """
         return tex
 
     def get_experience_entry(self, exp: dict) -> str:
         tex = rf"""
         \resumeSubheading
-        {{{exp["organization"]}}}{{{exp["duration"]}}}
-        {{{exp["role"]}}}{{{exp["location"]}}}
+        {{{format_latex_string(exp["organization"])}}}{{{format_latex_string(exp["duration"])}}}
+        {{{format_latex_string(exp["role"])}}}{{{format_latex_string(exp["location"])}}}
             \resumeItemListStart
         """
         for point in exp["description"]:
             tex += rf"""
-            \resumeItem{{{point}}}
+            \resumeItem{{{format_latex_string(point)}}}
             """
         tex += r"""
             \resumeItemListEnd
@@ -40,12 +41,12 @@ class Resume:
     def get_project_entry(self, proj: dict) -> str:
         tex = rf"""
         \resumeProjectHeading
-        {{\textbf{{{proj["name"]}}} $|$ \emph{{{", ".join(proj["technologies"])}}}}}{{}}
-        \resumeItemListStart
+        {{\textbf{{{format_latex_string(proj["name"])}}} $|$ \emph{{{", ".join(format_latex_string(tech) for tech in proj["technologies"])}}}}}{{}}
+            \resumeItemListStart
         """
         for point in proj["description"]:
             tex += rf"""
-            \resumeItem{{{point}}}
+            \resumeItem{{{format_latex_string(point)}}}
             """
         tex += r"""
             \resumeItemListEnd
@@ -58,9 +59,9 @@ class Resume:
         \begin{{center}}
             \textbf{{\Huge \scshape {self.name}}} \\ \vspace{{1pt}}
             \seticon{{faPhone}} \ \small {self.phone} \quad
-            \href{{mailto:{self.email}}}{{\seticon{{faEnvelope}} \underline{{{self.email}}}}} \quad
-            \href{{https://www.linkedin.com/in/{self.linkedin}}}{{\seticon{{faLinkedin}} \underline{{linkedin.com/in/{self.linkedin}}}}} \quad
-            \href{{https://github.com/{self.github}}}{{\seticon{{faGithub}} \underline{{github.com/{self.github}}}}}
+            \href{{mailto:{format_latex_string(self.email)}}}{{\seticon{{faEnvelope}} \underline{{{format_latex_string(self.email)}}}}} \quad
+            \href{{https://www.linkedin.com/in/{format_latex_string(self.linkedin)}}}{{\seticon{{faLinkedin}} \underline{{linkedin.com/in/{format_latex_string(self.linkedin)}}}}} \quad
+            \href{{https://github.com/{format_latex_string(self.github)}}}{{\seticon{{faGithub}} \underline{{github.com/{format_latex_string(self.github)}}}}}
         \end{{center}}
         """
         return tex
@@ -120,7 +121,7 @@ class Resume:
         # Assuming skills is a dictionary with categories as keys and list of skills as values
         for category, skills_list in self.skills.items():
             tex += rf"""
-            \textbf{{{category}}}{{{": " + ", ".join(skills_list)}}}
+            \textbf{{{format_latex_string(category)}}}{{{": " + ", ".join(format_latex_string(skill) for skill in skills_list)}}}
             """
         tex += r"""
             }}
@@ -285,10 +286,25 @@ if __name__ == "__main__":
         "Frameworks": ["React", "Django", "Flask"],
         "Databases": ["MySQL", "MongoDB"]
     }
-    
-    resume = Resume(sample_education, sample_experience, sample_projects, sample_skills, "Harsh Bansal", "9821391634", "harshbansal8705@gmail.com", "harshbansal8705", "harshbansal8705")
+
+    with open("data/resume.json", "r") as f:
+        import json
+        data = json.load(f)
+
+    resume = Resume(
+        education=data.get("education", []),
+        experience=data.get("experience", []),
+        projects=data.get("projects", []),
+        skills=data.get("skills", {}),
+        name=data.get("name", ""),
+        phone=data.get("contact", {}).get("phone", ""),
+        email=data.get("contact", {}).get("email", ""),
+        linkedin=data.get("contact", {}).get("linkedin", ""),
+        github=data.get("contact", {}).get("github", "")
+    )
+
     # print(resume.generate_education_section())
     # print(resume.generate_experience_section())
     # print(resume.generate_projects_section())
     # print(resume.generate_skills_section())
-    print(resume.generate_full_resume_pdf("resume.pdf"))
+    resume.generate_full_resume_pdf("resume.pdf")

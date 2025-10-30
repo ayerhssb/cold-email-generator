@@ -1,13 +1,9 @@
+import uuid, json
 import streamlit as st
 from langchain_community.document_loaders import WebBaseLoader
 
-from chains import Chain
-from portfolio import Portfolio
-from utils import clean_text
-
 import os
 import csv
-import pandas as pd
 import streamlit as st
 from langchain_community.document_loaders import WebBaseLoader
 
@@ -15,9 +11,10 @@ from chains import Chain
 from portfolio import Portfolio
 from utils import clean_text
 from mailmerge import send_emails
+from ResumeEditor import Resume
 
 
-def create_streamlit_app(llm, portfolio, clean_text):
+def create_streamlit_app(llm: Chain, portfolio, clean_text):
     st.title("📧 Automate generating & sending mails")
     url_input = st.text_input("Enter a URL:", value="https://jobs.cisco.com/jobs/ProjectDetail/Software-Engineer-C-Programming-and-Networking-5-to-9-Yrs-Chennai-Bangalore/1443134")
     submit_button = st.button("Submit")
@@ -35,13 +32,9 @@ def create_streamlit_app(llm, portfolio, clean_text):
                 st.code(email, language='markdown')
         except Exception as e:
             st.error(f"An Error Occurred: {e}")
-    
-    
-    
+
     st.markdown("---")
-    
-    
-    
+
     st.header("Mail-Merge: generate & send personalised mails from CSV")
     role_input = st.text_input("Role you are applying for (used to craft emails):", value="Software Engineer")
     generate_btn = st.button("Generate Mails")
@@ -75,14 +68,30 @@ def create_streamlit_app(llm, portfolio, clean_text):
                     # query portfolio links using role (simple: treat role as a skill query)
                     links = portfolio.query_links([role_input])
                     # create subject & body using chains helper
+                    with open("data/resume.json", "r") as f:
+                        resume_data = json.load(f)
                     subject = f"Regarding {role_input} opportunities at {company}"
+                    resume_file = "_".join(resume_data.get("name", "").split()) + "_" + uuid.uuid4().hex + ".pdf"
                     try:
                         body = llm.write_application_email_for_role(name, company, role_input, links)
+                        llm_data = llm.extract_projects_and_experiences(company, role_input)
+                        resume = Resume(
+                            education=resume_data.get("education", []),
+                            experience=llm_data.get("experience", []),
+                            projects=llm_data.get("projects", []),
+                            skills=resume_data.get("skills", {}),
+                            name=resume_data.get("name", ""),
+                            phone=resume_data.get("contact", {}).get("phone", ""),
+                            email=resume_data.get("contact", {}).get("email", ""),
+                            linkedin=resume_data.get("contact", {}).get("linkedin", ""),
+                            github=resume_data.get("contact", {}).get("github", "")
+                        )
+                        resume.generate_full_resume_pdf(resume_file)
                     except Exception as e:
                         body = f"Could not generate email due to: {e}"
                     st.session_state.generated_mails.append({
                         "name": name, "email": email, "company": company,
-                        "subject": subject, "body": body
+                        "subject": subject, "body": body, "resume_file": resume_file
                     })
             st.success(f"Generated {len(st.session_state.generated_mails)} drafts.")
 
@@ -106,7 +115,8 @@ def create_streamlit_app(llm, portfolio, clean_text):
                     messages.append({
                         "to": m['email'],
                         "subject": m['subject'],
-                        "body": m['body']
+                        "body": m['body'],
+                        "attachments": ['pdfs/' + m['resume_file']] if m.get('resume_file') else []
                     })
                 results = send_emails(messages)
                 st.success(f"Sent {len(results)} emails.")

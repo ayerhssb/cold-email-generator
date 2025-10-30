@@ -129,6 +129,47 @@ class Chain:
         })
         return resp.content
 
+    def extract_projects_and_experiences(self, company, role, job_description=None, resume_json_file="data/resume.json"):
+        """
+        Extract relevant projects and experiences from the resume JSON file for the given company and role.
+        If job_description is provided, use it to better tailor the extraction.
+        Returns a dict with `projects` and `experience` keys.
+        """
+        resume_data = open(resume_json_file, "r").read()
+        prompt = PromptTemplate.from_template(
+            """
+            You've been provided with a resume in JSON format. Based on the company, role and job description (if provided), you need to extract the relevant projects and experiences from the JSON to build a tailored CV.
+
+            Company: {company}
+            Role: {role}
+            Job Description: {job_description}
+
+            Resume JSON:
+            {resume_data}
+
+            Instructions:
+            Only output a valid JSON text containing the `projects` and `experience` keys.
+            Each key should map to a list of relevant items extracted from the resume JSON.
+            Ensure that the selected projects and experiences are highly relevant to the specified role and company.
+
+            **Do not include any additional commentary or text or quotes or backticks outside of the JSON structure.**
+            """
+        )
+
+        chain = prompt | self.llm
+        res = chain.invoke({
+            "company": company,
+            "role": role,
+            "job_description": job_description or "N/A",
+            "resume_data": resume_data
+        })
+        try:
+            json_parser = JsonOutputParser()
+            res = json_parser.parse(res.content)
+        except OutputParserException:
+            raise OutputParserException("Unable to parse CV JSON.")
+        return res
+
 
 if __name__ == "__main__":
     print(os.getenv("GROQ_API_KEY"))

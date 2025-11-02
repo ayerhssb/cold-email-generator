@@ -1,4 +1,8 @@
 import re
+from app.logger import get_logger
+
+logger = get_logger(__name__)
+
 
 def clean_text(text):
     # Remove HTML tags
@@ -13,6 +17,7 @@ def clean_text(text):
     text = text.strip()
     # Remove extra whitespace
     text = ' '.join(text.split())
+    logger.debug("clean_text output length=%d", len(text))
     return text
 
 def format_latex_string(string: str) -> str:

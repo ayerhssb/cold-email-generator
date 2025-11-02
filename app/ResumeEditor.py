@@ -1,6 +1,9 @@
 from typing import List
 import subprocess, os
 from utils import format_latex_string
+from app.logger import get_logger
+
+logger = get_logger(__name__)
 
 class Resume:
     def __init__(self, education: List[dict], experience: List[dict], projects: List[dict], skills: dict, name: str, phone: str, email: str, linkedin: str, github: str):
@@ -249,8 +252,19 @@ class Resume:
 
         if not os.path.exists("pdfs"):
             os.makedirs("pdfs")
-        subprocess.run(["pdflatex", f"--jobname={output_path.split('.')[0]}", "-output-directory=pdfs", "resume.tex"], stderr=subprocess.DEVNULL)
-        os.remove("resume.tex")
+        logger.info("Running pdflatex to generate %s", output_path)
+        try:
+            result = subprocess.run(["pdflatex", f"--jobname={output_path.split('.')[0]}", "-output-directory=pdfs", "resume.tex"], stderr=subprocess.DEVNULL)
+            logger.info("pdflatex finished with returncode=%s", result.returncode)
+        except FileNotFoundError:
+            logger.exception("pdflatex not found; cannot generate PDF for %s", output_path)
+        except Exception:
+            logger.exception("Unexpected error while running pdflatex for %s", output_path)
+
+        try:
+            os.remove("resume.tex")
+        except OSError:
+            logger.warning("Failed to remove temporary resume.tex")
         import glob
         for pattern in ["pdfs/*.aux", "pdfs/*.log", "pdfs/*.out"]:
             for filepath in glob.glob(pattern):

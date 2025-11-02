@@ -1,5 +1,8 @@
 # app/mailmerge.py
 from __future__ import print_function
+from app.logger import get_logger
+
+logger = get_logger(__name__)
 import os
 import base64
 from email.mime.text import MIMEText
@@ -66,7 +69,7 @@ def create_message(sender, to, subject, message_text, attachments=None):
                 path = alt
             else:
                 # Attachment missing; skip but keep processing others
-                print(f"Attachment not found, skipping: {attachment}")
+                logger.warning("Attachment not found, skipping: %s", attachment)
                 continue
 
         ctype, encoding = mimetypes.guess_type(path)
@@ -89,6 +92,7 @@ def send_message(service, user_id, message):
         sent = service.users().messages().send(userId=user_id, body=message).execute()
         return sent
     except Exception as e:
+        logger.exception("Failed to send message to %s: %s", user_id, e)
         raise
 
 def send_emails(messages, sender="me"):

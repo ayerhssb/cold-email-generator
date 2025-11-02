@@ -1,40 +1,14 @@
-import uuid, json
+import os, csv, uuid, json
 import streamlit as st
-from langchain_community.document_loaders import WebBaseLoader
-
-import os
-import csv
-import streamlit as st
-from langchain_community.document_loaders import WebBaseLoader
 
 from chains import Chain
-from portfolio import Portfolio
-from utils import clean_text
 from mailmerge import send_emails
 from ResumeEditor import Resume
+from app.logger import logger
 
 
-def create_streamlit_app(llm: Chain, portfolio, clean_text):
-    st.title("📧 Automate generating & sending mails")
-    url_input = st.text_input("Enter a URL:", value="https://jobs.cisco.com/jobs/ProjectDetail/Software-Engineer-C-Programming-and-Networking-5-to-9-Yrs-Chennai-Bangalore/1443134")
-    submit_button = st.button("Submit")
-
-    if submit_button:
-        try:
-            loader = WebBaseLoader([url_input])
-            data = clean_text(loader.load().pop().page_content)
-            portfolio.load_portfolio()
-            jobs = llm.extract_jobs(data)
-            for job in jobs:
-                skills = job.get('skills', [])
-                links = portfolio.query_links(skills)
-                email = llm.write_mail(job, links)
-                st.code(email, language='markdown')
-        except Exception as e:
-            st.error(f"An Error Occurred: {e}")
-
-    st.markdown("---")
-
+def create_streamlit_app(llm: Chain):
+    logger.info("create_streamlit_app called")
     st.header("Mail-Merge: generate & send personalised mails from CSV")
     role_input = st.text_input("Role you are applying for (used to craft emails):", value="Software Engineer")
     generate_btn = st.button("Generate Mails")
@@ -43,9 +17,6 @@ def create_streamlit_app(llm: Chain, portfolio, clean_text):
     # where the CSV will be read from (use backend csv in project dir)
     base_dir = os.path.dirname(__file__)
     csv_file = os.path.join(base_dir, "test-mailmerge.csv")  # change path if needed
-
-    # ensure portfolio loaded
-    portfolio.load_portfolio()
 
     # Initialize session_state container
     if "generated_mails" not in st.session_state:
@@ -65,15 +36,14 @@ def create_streamlit_app(llm: Chain, portfolio, clean_text):
                     email = row.get("email")
                     if not email:
                         continue
-                    # query portfolio links using role (simple: treat role as a skill query)
-                    links = portfolio.query_links([role_input])
+
                     # create subject & body using chains helper
                     with open("data/resume.json", "r") as f:
                         resume_data = json.load(f)
                     subject = f"Regarding {role_input} opportunities at {company}"
                     resume_file = "_".join(resume_data.get("name", "").split()) + "_" + uuid.uuid4().hex + ".pdf"
                     try:
-                        body = llm.write_application_email_for_role(name, company, role_input, links)
+                        body = llm.write_application_email_for_role(name, company, role_input)
                         llm_data = llm.extract_projects_and_experiences(company, role_input)
                         resume = Resume(
                             education=resume_data.get("education", []),
@@ -88,6 +58,7 @@ def create_streamlit_app(llm: Chain, portfolio, clean_text):
                         )
                         resume.generate_full_resume_pdf(resume_file)
                     except Exception as e:
+                        logger.exception("Failed to generate email for %s at %s: %s", name, company, e)
                         body = f"Could not generate email due to: {e}"
                     st.session_state.generated_mails.append({
                         "name": name, "email": email, "company": company,
@@ -122,12 +93,12 @@ def create_streamlit_app(llm: Chain, portfolio, clean_text):
                 st.success(f"Sent {len(results)} emails.")
                 st.write(results)
             except Exception as e:
+                logger.exception("Failed to send emails: %s", e)
                 st.error(f"Sending failed: {e}")
 
 
 if __name__ == "__main__":
+    logger.info("Starting cold-email-generator application")
     chain = Chain()
-    portfolio = Portfolio()
     st.set_page_config(layout="wide", page_title="Cold Email Generator", page_icon="📧")
-    create_streamlit_app(chain, portfolio, clean_text)
-
+    create_streamlit_app(chain)
